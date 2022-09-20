@@ -1,33 +1,40 @@
 from lib.log import log_text as log
 
-def remove_tags(text, tag_to_remove="h2", remove_inside=False):
+def remove_tags(text, tag_to_remove="", remove_inside=False):
+    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "br"]
+    
     if type(text) != str:
         text = str(text)
-    log("Removing \"" + tag_to_remove + "\" Tags From \"" + text + "\"")
-    start_pos = text.find("<" + tag_to_remove)
-
-    if start_pos == -1:
-        log("Could Not Find Tag To Remove. Returning.")
-        return text
-
-    log("Start: " + str(start_pos))
-    end_pos = 0
-    if remove_inside:
-        end_pos = text.find("</" + tag_to_remove + ">", start_pos) + len("</" + tag_to_remove + ">")
-        log("End: " + str(end_pos))
-        text = text.replace(text[start_pos:end_pos], "", 1)
+        
+    if tag_to_remove == "":
+        for tag in tag_list:
+            text = remove_tags(text, tag, remove_inside)
+        return text               
     else:
-        end_pos = text.find(">", start_pos) + 1
-        text = text.replace(text[start_pos:end_pos], "", 1)
-        start_pos = text.find("</" + tag_to_remove + ">")
-        end_pos = start_pos + len("</" + tag_to_remove + ">")
-        text = text.replace(text[start_pos:end_pos], "", 1)
+        log("Removing \"" + tag_to_remove + "\" Tags From \"" + text + "\"")
+        start_pos = text.find("<" + tag_to_remove)
 
+        if start_pos == -1:
+            log("Could Not Find Tag To Remove. Returning.")
+            return text
 
-    if text.find("<" + tag_to_remove) != -1:
-        return remove_tags(text, tag_to_remove, remove_inside)
-    else:
-        return text
+        log("Start: " + str(start_pos))
+        end_pos = 0
+        if remove_inside:
+            end_pos = text.find("</" + tag_to_remove + ">", start_pos) + len("</" + tag_to_remove + ">")
+            log("End: " + str(end_pos))
+            text = text.replace(text[start_pos:end_pos], "", 1)
+        else:
+            end_pos = text.find(">", start_pos) + 1
+            text = text.replace(text[start_pos:end_pos], "", 1)
+            start_pos = text.find("</" + tag_to_remove + ">")
+            end_pos = start_pos + len("</" + tag_to_remove + ">")
+            text = text.replace(text[start_pos:end_pos], "", 1)
+
+        if text.find("<" + tag_to_remove) != -1:
+            return remove_tags(text, tag_to_remove, remove_inside)
+        else:
+            return text
 
 def find_earliest_position(*args):
     if len(args) == 1:
