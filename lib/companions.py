@@ -12,3 +12,8 @@ url = ""
 def upload_companion_data():
     pass
 
+def grab_animal_companion_data():
+    pass
+
+def organize_animal_companion_data():
+    pass
