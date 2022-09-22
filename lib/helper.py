@@ -1,7 +1,7 @@
 from lib.log import log_text as log
 
 def remove_tags(text, tag_to_remove="", remove_inside=False):
-    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "br"]
+    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/"]
     
     if type(text) != str:
         text = str(text)

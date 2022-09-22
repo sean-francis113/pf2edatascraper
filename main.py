@@ -12,11 +12,12 @@ import lib.class_features
 import lib.spells
 import lib.feats
 import lib.companions
+import lib.eidolon
 
 try:
     log_file = lib.log.open_log_file()
 
-    lib.companions.grab_animal_companion_data()
+    lib.eidolon.grab_eidolon_data()
 
     lib.log.close_log_file()
 

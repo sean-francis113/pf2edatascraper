@@ -35,7 +35,7 @@ def grab_feat_data():
 
     feat_output = []
 
-    log("Starting to Grab Spells")
+    log("Starting to Grab Feats")
 
     i = 1
 
