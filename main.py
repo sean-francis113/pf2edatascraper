@@ -11,11 +11,13 @@ import lib.backgrounds
 import lib.class_features
 import lib.spells
 import lib.feats
+import lib.companions
+import lib.eidolon
 
 try:
     log_file = lib.log.open_log_file()
 
-    lib.feats.upload_feat_data()
+    lib.eidolon.grab_eidolon_data()
 
     lib.log.close_log_file()
 
