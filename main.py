@@ -13,11 +13,12 @@ import lib.spells
 import lib.feats
 import lib.companions
 import lib.eidolon
+import lib.equipment
 
 try:
     log_file = lib.log.open_log_file()
 
-    lib.eidolon.grab_eidolon_data()
+    lib.companions.grab_advanced_option_data()
 
     lib.log.close_log_file()
 

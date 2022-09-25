@@ -257,7 +257,187 @@ def grab_animal_companion_data(url=animal_companion_url):
                                         companion_advanced_maneuver_summary])
 
     return animal_companion_output               
+               
+def grab_advanced_option_data():
+    advanced_option_url = "https://2e.aonprd.com/AnimalCompanions.aspx?Advanced=true"
+    
+    advanced_option_output = []
+    
+    #Table Columns: Name, link, strength, dexterity, constitution, intelligence, wisdom, charisma, extra_wep_damage, skill_increases, attack_increases, defenses_increases, size_increases
+            
+    log("Opening Browser")
+    driver = webdriver.Chrome('./chromedriver.exe')
+    log("Going to Page: " + advanced_option_url)
+    driver.get(advanced_option_url)
+ 
+    log("Getting Page Source")
+    html = driver.page_source
+    log("Setting up BeautifulSoup with Source")
+    soup = BeautifulSoup(html, "html.parser")
+
+    log("Finding Detail Container")
+    container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_DetailedOutput")
+    html = str(container)
+    
+    log("Getting All Advanced Options Headings")
+    heading_list = container.find_all("h2")
+    
+    log("Searching All Options For Companion Changes")
+    for heading in heading_list:
+        option_description = ""
+        
+        stat_list = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+        skill_list = ["Athletics", "Acrobatics", "Perception", "Arcana", "Crafting", "Deception", "Diplomacy", "Intimidation", "Medicine", "Nature", "Occultism", "Performance", "Religion", "Society", "Stealth", "Survival", "Thievery", "Lore"]
+        
+        option_name = ""
+        option_link = ""
+        strength_increase = ""
+        dexterity_increase = ""
+        constitution_increase = ""
+        intelligence_increase = ""
+        wisdom_increase = ""
+        charisma_increase = ""
+        extra_wep_damage = ""
+        skill_increases = ""
+        defenses_increases = ""
+        attack_increases = ""
+        size_increases = ""
+        magical_attacks = ""
+        
+        log("Getting Name and Link")
+        option_name = heading.text
+        links = heading.find_all("a")
+        for l in links:
+            if l.get("href").startswith("AnimalCompanions.aspx"):
+                option_link = "https://2e.aonprd.com/" + l.get("href")
+        log(f"Found: {option_name}, {option_link}")
+        
+        heading_pos = html.find(f"{option_name}</a></h2>")
+        
+        log("Getting Full Description")
+        description_start_pos = html.find("<br>", html.find("<b>Source</b>", heading_pos)) + len("<br>")
+        if description_start_pos == len("<br>") - 1:
+            description_start_pos = html.find("<br/>", html.find("<b>Source</b>", heading_pos)) + len("<br/>")
+        description_end_pos = html.find("<br><h2 ", description_start_pos)
+        if description_end_pos == -1:
+            description_end_pos = html.find("<br/><h2 ", description_start_pos)
+        
+        option_description = html[description_start_pos:description_end_pos]
+        option_description = option_description.replace("<br>", "")
+        option_description = option_description.replace("<br/>", "")
+        option_description = option_description.replace("<hr>", "")
+        option_description = option_description.replace("<hr/>", "")
+        option_description = remove_tags(option_description)
+        log(f"Found: {option_description}")
+        
+        description_sentences = option_description.split(".")
                 
+        log("Looking For Stat Increases")
+        for sentence in description_sentences:
+            for stat in stat_list:
+                if stat in sentence:
+                    log(f"Found {stat} in {sentence}")
+                    sentence_words = sentence.split(" ")
+                    after_stat = False
+                    for word in sentence_words:
+                        word = word.replace(".", "")
+                        word = word.replace(",", "")
+                        if word == stat:
+                            after_stat = True
+                        if word.isnumeric() and after_stat == True:
+                            if stat == "Strength":
+                                strength_increase = int(word)
+                                after_stat = False
+                                log(f"Strength Increases By {strength_increase}")
+                                break
+                            if stat == "Dexterity":
+                                dexterity_increase = int(word)
+                                after_stat = False
+                                log(f"Dexterity Increases By {dexterity_increase}")
+                                break
+                            if stat == "Constitution":
+                                constitution_increase = int(word)
+                                after_stat = False
+                                log(f"Constitution Increases By {constitution_increase}")
+                                break
+                            if stat == "Intelligence":
+                                intelligence_increase = int(word)
+                                after_stat = False
+                                log(f"Intelligence Increases By {intelligence_increase}")
+                                break
+                            if stat == "Wisdom":
+                                wisdom_increase = int(word)
+                                after_stat = False
+                                log(f"Wisdom Increases By {wisdom_increase}")
+                                break
+                            if stat == "Charisma":
+                                charisma_increase = int(word)
+                                after_stat = False
+                                log(f"Charisma Increases By {charisma_increase}")
+                                break
+                            
+        log("Finding Extra Weapon Damage")
+        for sentence in description_sentences:
+            if "additional damage with its unarmed attacks" in sentence:
+                log("Found Additional Damage. Looking For Value")
+                word_list = sentence.split(" ")
+                for word in word_list:
+                    if word.isnumeric():
+                        extra_wep_damage = int(word)
+                        log(f"Found: {extra_wep_damage}")
+                            
+        log("Finding Skill Increases")
+        for skill in skill_list:
+            if skill in option_description:
+                log(f"Found: {skill}")
+                skill_increases += f"{skill},"
+                
+        if skill_increases != "":
+            skill_increases = skill_increases[:-1]
+            
+        log(f"Skill Increases: {skill_increases}")
+        
+        log("Finding Attack Increases")
+        for sentence in description_sentences:
+            if "proficiency" in sentence and ("unarmed attacks" in sentence or "unarmed strikes" in sentence):
+                attack_increases = "One Step"
+                break
+                
+        log("Finding If Attacks Are Magical")
+        for sentence in description_sentences:
+            if "attacks count as magical" in sentence or "attacks become magical" in sentence or "strikes count as magical" in sentence or "strikes become magical" in sentence:
+                magical_attacks = "Yes"
+                break
+
+        log("Finding Defense Increases")
+        for sentence in description_sentences:
+            if "gain resistance" in sentence:
+                log("Found Resistances")
+                word_list = sentence.split(" ")
+                for word in word_list:
+                    if word.isnumeric():
+                        value = int(word)
+                        defenses_increases += f"resistance {value} (see page for details),"
+            if "barding" in sentence:
+                log("Found Barding")
+                defenses_increases += "barding,"
+            if "unarmored" in sentence:
+                log("Found Unarmored")
+                defenses_increases += "unarmored,"
+        
+        defenses_increases = defenses_increases[:-1]
+        
+        log(f"Defence Increases: {defenses_increases}")        
+            
+        log("Finding Size Increases")
+        if "grows in size" in option_description or "grows by one size" in option_description:
+            log(f"Found Size Increase")
+            size_increases = "One Size"
+                
+        advanced_option_output.append([option_name, option_link, strength_increase, dexterity_increase, constitution_increase, intelligence_increase, wisdom_increase, charisma_increase, attack_increases, magical_attacks, extra_wep_damage, defenses_increases, skill_increases, size_increases])                  
+                    
+    log(advanced_option_output)    
+ 
 def organize_animal_companion_data(url=animal_companion_url):
     log("Getting Animal Companion Data")
     animal_companion_output = grab_animal_companion_data(url)
