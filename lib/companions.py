@@ -10,10 +10,17 @@ from lib.log import log_text as log
 
 animal_companion_url = "https://2e.aonprd.com/AnimalCompanions.aspx"
 undead_companion_url = "https://2e.aonprd.com/AnimalCompanions.aspx?Undead=true"
+stat_list = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+skill_list = ["Athletics", "Acrobatics", "Perception", "Arcana", "Crafting", "Deception", "Diplomacy", "Intimidation", "Medicine", "Nature", "Occultism", "Performance", "Religion", "Society", "Stealth", "Survival", "Thievery", "Lore"]
+size_list = ["Small", "Medium", "Large"]
+proficiency_list = ["Untrained", "Trained", "Expert", "Master", "Legendary"]
+saving_throw_list = ["Fortitude", "Reflex", "Will"]
+weapon_trait_list = ["Agile", "Finesse"]
 
 def upload_companion_data():
     log("Starting Animal Companion Upload Preperation")
     animal_companion_data = organize_animal_companion_data()
+    advanced_option_data = organize_advanced_data()
     log("Preparation Done")
 
     log("Clearing Table")
@@ -33,12 +40,23 @@ def upload_companion_data():
         log("Inserting " + companion + " Into Database")
         conn = lib.db.query_database("INSERT INTO official_companions VALUES (" + companion + ");", connection=conn, close_conn=False)[0]
 
+    log("Clearing Table")
+    conn = lib.db.query_database("DELETE FROM official_companion_options;", connection=conn, close_conn=False)[0]
+
+    log("Starting INSERT Process")
+    for option in advanced_option_data:
+        log("Inserting " + option + " Into Database")
+        conn = lib.db.query_database("INSERT INTO official_companion_options VALUES (" + option + ");", connection=conn, close_conn=False)[0]
+
     log("Commiting Database Changes")
     conn.commit()
     log("Closing Connection")
     conn.close()
 
 def grab_animal_companion_data(url=animal_companion_url):
+    global skill_list
+    global stat_list
+    
     animal_companion_output = []
 
     log("Opening Browser")
@@ -108,14 +126,12 @@ def grab_animal_companion_data(url=animal_companion_url):
             description_end_pos = html.find("<br/>", description_start_pos)
             companion_description = html[description_start_pos:description_end_pos].strip()        
         
-        print(f"Start: {description_start_pos}, End: {description_end_pos}")
         companion_description = remove_tags(companion_description, "a")
         log(f"Found {companion_description}")
         
         log("Getting Companion Size")
         size_start_pos = html.find("<b>Size</b>", description_end_pos) + len("<b>Size</b>")
         size_end_pos = html.find("<br/>", size_start_pos)
-        print(f"Start: {size_start_pos}, End: {size_end_pos}")
         companion_size = html[size_start_pos:size_end_pos].strip()
         log(f"Found {companion_size}")
         
@@ -168,26 +184,18 @@ def grab_animal_companion_data(url=animal_companion_url):
         log(f"Found {companion_hit_points}")
         
         log("Getting Skill Training")
-        senses_start_pos = html.find("<b>Senses</b>", hp_end_pos)
-        if html.find("<u>", hp_end_pos) > -1:
-            skill_list_start_pos = html.find("<u>", hp_end_pos) + len("<u>")
-            skill_list_end_pos = html.find("</u>", skill_list_start_pos)
-            while(skill_list_end_pos < senses_start_pos and skill_list_end_pos != -1):
-                skill_list_text = html[skill_list_start_pos:skill_list_end_pos]
-                skill_list_text = remove_tags(skill_list_text, "a")
-                companion_skill_boost.append(skill_list_text)
-                skill_list_start_pos = html.find("<u>", skill_list_end_pos + 1) + len("<u>")
-                skill_list_end_pos = html.find("</u>", skill_list_start_pos)
-                
-            for c in companion_skill_boost:
-                c = c.strip()
-        else:
-            companion_skill_boost.append("none (mindless)")
-            skill_list_end_pos = html.find("<br/>", hp_end_pos + len("<br/>") + 1)
+        skill_start_pos = html.find("<b>Skill</b>", hp_end_pos) + len("<b>Skill</b>")
+        if skill_start_pos == len("<b>Skill</b>") - 1:
+            skill_start_pos = html.find("<b>Skills</b>", hp_end_pos) + len("<b>Skills</b>")
+        skill_end_pos = html.find("<br>", skill_start_pos)
+        if skill_end_pos == -1:
+            skill_end_pos = html.find("<br/>", skill_start_pos)
+            
+        companion_skill_boost = remove_tags(html[skill_start_pos:skill_end_pos]).split(",")
         log(f"Found {str(companion_skill_boost)}")
         
         log("Getting Senses")
-        senses_start_pos = html.find("<b>Senses</b>", skill_list_end_pos) + len("<b>Senses</b>")
+        senses_start_pos = html.find("<b>Senses</b>", skill_end_pos) + len("<b>Senses</b>")
         senses_end_pos = html.find("<br/>", senses_start_pos)
         senses_text = html[senses_start_pos:senses_end_pos]
         senses_text = remove_tags(senses_text, "a")
@@ -260,16 +268,204 @@ def grab_animal_companion_data(url=animal_companion_url):
                
 def grab_advanced_option_data():
     advanced_option_url = "https://2e.aonprd.com/AnimalCompanions.aspx?Advanced=true"
+    specialization_option_url = "https://2e.aonprd.com/AnimalCompanions.aspx?Specialized=true"
+    url_list = [advanced_option_url,specialization_option_url]
     
     advanced_option_output = []
     
     #Table Columns: Name, link, strength, dexterity, constitution, intelligence, wisdom, charisma, extra_wep_damage, skill_increases, attack_increases, defenses_increases, size_increases
+    
+    for url in url_list:        
+        log("Opening Browser")
+        driver = webdriver.Chrome('./chromedriver.exe')
+        log("Going to Page: " + url)
+        driver.get(url)
+    
+        log("Getting Page Source")
+        html = driver.page_source
+        log("Setting up BeautifulSoup with Source")
+        soup = BeautifulSoup(html, "html.parser")
+
+        log("Finding Detail Container")
+        container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_DetailedOutput")
+        html = str(container)
+        
+        log("Getting All Advanced Options Headings")
+        heading_list = container.find_all("h2")
+        
+        log("Searching All Options For Companion Changes")
+        for heading in heading_list:
+            option_description = ""            
+            option_type = ""
+            if url == advanced_option_url:
+                option_type = "Advanced"
+            else:
+                option_type = "Specialization"
+            option_name = ""
+            option_link = ""
+            strength_increase = ""
+            dexterity_increase = ""
+            constitution_increase = ""
+            intelligence_increase = ""
+            wisdom_increase = ""
+            charisma_increase = ""
+            extra_wep_damage = ""
+            skill_increases = ""
+            defenses_increases = ""
+            attack_increases = ""
+            size_increases = ""
+            magical_attacks = ""
             
+            log("Getting Name and Link")
+            option_name = heading.text
+            links = heading.find_all("a")
+            for l in links:
+                if l.get("href").startswith("AnimalCompanions.aspx"):
+                    option_link = "https://2e.aonprd.com/" + l.get("href")
+            log(f"Found: {option_name}, {option_link}")
+            
+            heading_pos = html.find(f"{option_name}</a></h2>")
+            
+            log("Getting Full Description")
+            description_start_pos = html.find("<br>", html.find("<b>Source</b>", heading_pos)) + len("<br>")
+            if description_start_pos == len("<br>") - 1:
+                description_start_pos = html.find("<br/>", html.find("<b>Source</b>", heading_pos)) + len("<br/>")
+            description_end_pos = html.find("<br><h2 ", description_start_pos)
+            if description_end_pos == -1:
+                description_end_pos = html.find("<br/><h2 ", description_start_pos)
+            
+            option_description = html[description_start_pos:description_end_pos]
+            option_description = option_description.replace("<br>", "")
+            option_description = option_description.replace("<br/>", "")
+            option_description = option_description.replace("<hr>", "")
+            option_description = option_description.replace("<hr/>", "")
+            option_description = remove_tags(option_description)
+            log(f"Found: {option_description}")
+            
+            description_sentences = option_description.split(".")
+                    
+            log("Looking For Stat Increases")
+            for sentence in description_sentences:
+                for stat in stat_list:
+                    if stat in sentence:
+                        log(f"Found {stat} in {sentence}")
+                        sentence_words = sentence.split(" ")
+                        after_stat = False
+                        for word in sentence_words:
+                            word = word.replace(".", "")
+                            word = word.replace(",", "")
+                            if word == stat:
+                                after_stat = True
+                            if word.isnumeric() and after_stat == True:
+                                if stat == "Strength":
+                                    strength_increase = word
+                                    after_stat = False
+                                    log(f"Strength Increases By {strength_increase}")
+                                    break
+                                if stat == "Dexterity":
+                                    dexterity_increase = word
+                                    after_stat = False
+                                    log(f"Dexterity Increases By {dexterity_increase}")
+                                    break
+                                if stat == "Constitution":
+                                    constitution_increase = word
+                                    after_stat = False
+                                    log(f"Constitution Increases By {constitution_increase}")
+                                    break
+                                if stat == "Intelligence":
+                                    intelligence_increase = word
+                                    after_stat = False
+                                    log(f"Intelligence Increases By {intelligence_increase}")
+                                    break
+                                if stat == "Wisdom":
+                                    wisdom_increase = word
+                                    after_stat = False
+                                    log(f"Wisdom Increases By {wisdom_increase}")
+                                    break
+                                if stat == "Charisma":
+                                    charisma_increase = word
+                                    after_stat = False
+                                    log(f"Charisma Increases By {charisma_increase}")
+                                    break
+                                
+            log("Finding Extra Weapon Damage")
+            for sentence in description_sentences:
+                if "additional damage with its unarmed attacks" in sentence:
+                    log("Found Additional Damage. Looking For Value")
+                    word_list = sentence.split(" ")
+                    for word in word_list:
+                        if word.isnumeric():
+                            extra_wep_damage = word
+                            log(f"Found: {extra_wep_damage}")
+                                
+            log("Finding Skill Increases")
+            for skill in skill_list:
+                if skill in option_description:
+                    log(f"Found: {skill}")
+                    skill_increases += f"{skill},"
+                    
+            if skill_increases != "":
+                skill_increases = skill_increases[:-1]
+                
+            log(f"Skill Increases: {skill_increases}")
+            
+            log("Finding Attack Increases")
+            for sentence in description_sentences:
+                if "proficiency" in sentence and ("unarmed attacks" in sentence or "unarmed strikes" in sentence):
+                    attack_increases = "One Step"
+                    break
+                    
+            log("Finding If Attacks Are Magical")
+            for sentence in description_sentences:
+                if "attacks count as magical" in sentence or "attacks become magical" in sentence or "strikes count as magical" in sentence or "strikes become magical" in sentence:
+                    magical_attacks = "Yes"
+                    break
+
+            log("Finding Defense Increases")
+            for sentence in description_sentences:
+                if "gain resistance" in sentence:
+                    log("Found Resistances")
+                    word_list = sentence.split(" ")
+                    for word in word_list:
+                        if word.isnumeric():
+                            value = word
+                            defenses_increases += f"resistance {value} (see page for details),"
+                if "barding" in sentence:
+                    log("Found Barding")
+                    defenses_increases += "barding,"
+                if "unarmored" in sentence:
+                    log("Found Unarmored")
+                    defenses_increases += "unarmored,"
+            
+            defenses_increases = defenses_increases[:-1]
+            
+            log(f"Defence Increases: {defenses_increases}")        
+                
+            log("Finding Size Increases")
+            if "grows in size" in option_description or "grows by one size" in option_description:
+                log(f"Found Size Increase")
+                size_increases = "One Size"
+                    
+            advanced_option_output.append([option_name, option_link, option_type, strength_increase, dexterity_increase, constitution_increase, intelligence_increase, wisdom_increase, charisma_increase, attack_increases, magical_attacks, extra_wep_damage, defenses_increases, skill_increases, size_increases])                  
+                    
+    log(advanced_option_output)
+    return advanced_option_output
+
+def grab_construct_companion_data():
+    global stat_list
+    global size_list
+    global skill_list
+    global proficiency_list
+    global saving_throw_list
+    
+    construct_companion_url = "https://2e.aonprd.com/Rules.aspx?ID=1600"
+    construct_output = []
+    
     log("Opening Browser")
     driver = webdriver.Chrome('./chromedriver.exe')
-    log("Going to Page: " + advanced_option_url)
-    driver.get(advanced_option_url)
- 
+    log("Going to Page: " + construct_companion_url)
+    driver.get(construct_companion_url)
+
     log("Getting Page Source")
     html = driver.page_source
     log("Setting up BeautifulSoup with Source")
@@ -279,164 +475,222 @@ def grab_advanced_option_data():
     container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_DetailedOutput")
     html = str(container)
     
-    log("Getting All Advanced Options Headings")
-    heading_list = container.find_all("h2")
+    log("Getting All Construct Category Headings")
+    heading_list = container.find_all("h1")
     
-    log("Searching All Options For Companion Changes")
     for heading in heading_list:
-        option_description = ""
+        construct_type_name = ""
+        construct_link = ""
+        construct_traits = "Construct"
+        construct_size = ""
+        construct_senses = ""
+        construct_speed = ""
+        construct_hp = ""
+        construct_stat_line = ""
+        construct_attack_proficiency = ""
+        construct_defense_proficiency = ""
+        construct_skill_proficiency = ""
+        construct_saving_throws_proficiency = ""
+        construct_attacks = ""
+        construct_extra_damage = ""
+        construct_immunities = ""
         
-        stat_list = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
-        skill_list = ["Athletics", "Acrobatics", "Perception", "Arcana", "Crafting", "Deception", "Diplomacy", "Intimidation", "Medicine", "Nature", "Occultism", "Performance", "Religion", "Society", "Stealth", "Survival", "Thievery", "Lore"]
+        heading_text = heading.text
         
-        option_name = ""
-        option_link = ""
-        strength_increase = ""
-        dexterity_increase = ""
-        constitution_increase = ""
-        intelligence_increase = ""
-        wisdom_increase = ""
-        charisma_increase = ""
-        extra_wep_damage = ""
-        skill_increases = ""
-        defenses_increases = ""
-        attack_increases = ""
-        size_increases = ""
-        magical_attacks = ""
+        if heading_text.startswith("Riding") or heading_text.startswith("Construct"):
+            log(f"Ignoring {heading_text}")
+            continue
         
-        log("Getting Name and Link")
-        option_name = heading.text
+        construct_type_name = heading_text.split(" ")[0]
         links = heading.find_all("a")
         for l in links:
-            if l.get("href").startswith("AnimalCompanions.aspx"):
-                option_link = "https://2e.aonprd.com/" + l.get("href")
-        log(f"Found: {option_name}, {option_link}")
+            if l.get("href").startswith("Rules.aspx"):
+                construct_link = "https://2e.aonprd.com/" + l.get("href")
         
-        heading_pos = html.find(f"{option_name}</a></h2>")
-        
-        log("Getting Full Description")
-        description_start_pos = html.find("<br>", html.find("<b>Source</b>", heading_pos)) + len("<br>")
+        log(f"Category Name is {construct_type_name}")
+        description_start_pos = html.find("<br>", heading.sourcepos) + len("<br>")
         if description_start_pos == len("<br>") - 1:
-            description_start_pos = html.find("<br/>", html.find("<b>Source</b>", heading_pos)) + len("<br/>")
-        description_end_pos = html.find("<br><h2 ", description_start_pos)
-        if description_end_pos == -1:
-            description_end_pos = html.find("<br/><h2 ", description_start_pos)
-        
-        option_description = html[description_start_pos:description_end_pos]
-        option_description = option_description.replace("<br>", "")
-        option_description = option_description.replace("<br/>", "")
-        option_description = option_description.replace("<hr>", "")
-        option_description = option_description.replace("<hr/>", "")
-        option_description = remove_tags(option_description)
-        log(f"Found: {option_description}")
-        
-        description_sentences = option_description.split(".")
-                
-        log("Looking For Stat Increases")
-        for sentence in description_sentences:
-            for stat in stat_list:
-                if stat in sentence:
-                    log(f"Found {stat} in {sentence}")
-                    sentence_words = sentence.split(" ")
-                    after_stat = False
-                    for word in sentence_words:
-                        word = word.replace(".", "")
-                        word = word.replace(",", "")
-                        if word == stat:
-                            after_stat = True
-                        if word.isnumeric() and after_stat == True:
-                            if stat == "Strength":
-                                strength_increase = int(word)
-                                after_stat = False
-                                log(f"Strength Increases By {strength_increase}")
-                                break
-                            if stat == "Dexterity":
-                                dexterity_increase = int(word)
-                                after_stat = False
-                                log(f"Dexterity Increases By {dexterity_increase}")
-                                break
-                            if stat == "Constitution":
-                                constitution_increase = int(word)
-                                after_stat = False
-                                log(f"Constitution Increases By {constitution_increase}")
-                                break
-                            if stat == "Intelligence":
-                                intelligence_increase = int(word)
-                                after_stat = False
-                                log(f"Intelligence Increases By {intelligence_increase}")
-                                break
-                            if stat == "Wisdom":
-                                wisdom_increase = int(word)
-                                after_stat = False
-                                log(f"Wisdom Increases By {wisdom_increase}")
-                                break
-                            if stat == "Charisma":
-                                charisma_increase = int(word)
-                                after_stat = False
-                                log(f"Charisma Increases By {charisma_increase}")
-                                break
-                            
-        log("Finding Extra Weapon Damage")
-        for sentence in description_sentences:
-            if "additional damage with its unarmed attacks" in sentence:
-                log("Found Additional Damage. Looking For Value")
-                word_list = sentence.split(" ")
-                for word in word_list:
-                    if word.isnumeric():
-                        extra_wep_damage = int(word)
-                        log(f"Found: {extra_wep_damage}")
-                            
-        log("Finding Skill Increases")
-        for skill in skill_list:
-            if skill in option_description:
-                log(f"Found: {skill}")
-                skill_increases += f"{skill},"
-                
-        if skill_increases != "":
-            skill_increases = skill_increases[:-1]
+            description_start_pos = html.find("<br/>", heading.sourcepos) + len("<br/>")
             
-        log(f"Skill Increases: {skill_increases}")
+        description_end_pos = html.find("<h1 ", description_start_pos)
         
-        log("Finding Attack Increases")
-        for sentence in description_sentences:
-            if "proficiency" in sentence and ("unarmed attacks" in sentence or "unarmed strikes" in sentence):
-                attack_increases = "One Step"
-                break
-                
-        log("Finding If Attacks Are Magical")
-        for sentence in description_sentences:
-            if "attacks count as magical" in sentence or "attacks become magical" in sentence or "strikes count as magical" in sentence or "strikes become magical" in sentence:
-                magical_attacks = "Yes"
-                break
-
-        log("Finding Defense Increases")
-        for sentence in description_sentences:
-            if "gain resistance" in sentence:
-                log("Found Resistances")
-                word_list = sentence.split(" ")
-                for word in word_list:
-                    if word.isnumeric():
-                        value = int(word)
-                        defenses_increases += f"resistance {value} (see page for details),"
-            if "barding" in sentence:
-                log("Found Barding")
-                defenses_increases += "barding,"
-            if "unarmored" in sentence:
-                log("Found Unarmored")
-                defenses_increases += "unarmored,"
+        log(f"Formatting Description to Search Through")
+        description = html[description_start_pos:description_end_pos]
+        description = remove_tags(description, "h2", True)
+        description = description.replace("<b>Source</b>", "")
+        description = description.replace("Guns & Gears pg. 33", "")
+        description = description.replace("<br>", "")
+        description = description.replace("<br/>", "")
+        description = remove_tags(description)
         
-        defenses_increases = defenses_increases[:-1]
+        description_sentences = description.split(".")
         
-        log(f"Defence Increases: {defenses_increases}")        
+        log("Searching Through Description Sentence by Sentence")
+        for sentence in description_sentences:
+            if "Small" in sentence or "Medium" in sentence or "Large" in sentence:
+                log("Found Sizes")
+                for size in size_list:
+                    if size in sentence:
+                        construct_size += size + ","
+                construct_size = construct_size[:-1]
+                log(f"Found {construct_size}")
             
-        log("Finding Size Increases")
-        if "grows in size" in option_description or "grows by one size" in option_description:
-            log(f"Found Size Increase")
-            size_increases = "One Size"
-                
-        advanced_option_output.append([option_name, option_link, strength_increase, dexterity_increase, constitution_increase, intelligence_increase, wisdom_increase, charisma_increase, attack_increases, magical_attacks, extra_wep_damage, defenses_increases, skill_increases, size_increases])                  
+            if "unarmed attacks" in sentence or "unarmed strikes" in sentence:
+                log("Found Unarmed Attacks")
+                for proficiency in proficiency_list:
+                    if proficiency in sentence or proficiency.lower() in sentence:
+                        construct_attack_proficiency = proficiency
+                        log(f"Found {construct_attack_proficiency}")
+                        break
                     
-    log(advanced_option_output)    
+            if "first unarmed attack" in sentence.lower() or "other unarmed attack" in sentence.lower():
+                log("Found an Attack")
+                damage = ""
+                damage_type = ""
+                damage_traits = ""
+                
+                for word in sentence.split(" "):
+                    if word.find("1d") > -1:
+                        damage = word
+                    elif word.find("bludgeoning") > -1 or word.find("piercing") > -1 or word.find("slashing") > -1:
+                        damage_type = word.capitalize()
+                    elif word.find("traits") > -1:
+                        for trait in weapon_trait_list:
+                            if trait.lower() in sentence.lower():
+                                damage_traits += f"{trait},"
+                
+                damage_traits = damage_traits[:-1]
+                construct_attacks += f"{damage}{damage_type}({damage_traits});"
+                log(f"Found: {construct_attacks}")    
+                    
+            if "unarmored" in sentence or "unarmored" in sentence:
+                log("Found Unarmored Defense")
+                for proficiency in proficiency_list:
+                    if proficiency in sentence or proficiency.lower() in sentence:
+                        construct_defense_proficiency = proficiency
+                        log(f"Found {construct_defense_proficiency}")
+                        break
+                    
+            if "all saving throws" in sentence.lower():
+                log("Found All Saving Throws")
+                for proficiency in proficiency_list:
+                    if proficiency in sentence:
+                        construct_saving_throws_proficiency = proficiency
+                        log(f"Found All Saving Throws: {construct_saving_throws_proficiency}")
+                        break
+            elif "fortitude" in sentence.lower() or "reflex" in sentence.lower() or "will" in sentence.lower():
+                for save in saving_throw_list:
+                    if save in sentence or save.lower() in sentence:
+                        log(f"Found {save}")
+                        for proficiency in proficiency_list:
+                            if proficiency in sentence:
+                                construct_saving_throws_proficiency += f"{save}:{proficiency},"
+                                log(f"Found {save}: {proficiency}")
+                                break
+                construct_saving_throws_proficiency = construct_saving_throws_proficiency[:-1]
+                
+            for skill in skill_list:
+                if skill.lower() in sentence.lower():
+                    log(f"Found {skill}")
+                    for proficiency in proficiency_list:
+                        if proficiency.lower() in sentence.lower():
+                            construct_skill_proficiency += f"{skill}:{proficiency},"
+                            log(f"Found {skill}: {proficiency}")
+                            break
+            if construct_skill_proficiency != "" and construct_skill_proficiency[-1] == ",":
+                construct_skill_proficiency = construct_skill_proficiency[:-1]
+                            
+            if "base ability modifiers" in sentence.lower():
+                log("Finding Stat Line")
+                construct_stat_line = sentence[sentence.find("Str"):sentence.find("Cha") + len("Cha") + 3]
+                log(f"Found: {construct_stat_line}")
+                
+            if "hit points" in sentence.lower() and construct_hp == "":
+                log(f"Found Hit Points")
+                find_extra_hp = False
+                base_hp = ""
+                extra_hp = ""
+                for word in sentence.split(" "):
+                    if word.isnumeric():
+                        if find_extra_hp == False:
+                            base_hp = word
+                            find_extra_hp = True
+                        else:
+                            extra_hp = word
+                            break
+                construct_hp = f"{base_hp}/{extra_hp}"
+                log(f"Found: {construct_hp}")
+                
+            if "immune" in sentence.lower():
+                log(f"Found Immunities")
+                construct_immunities = "Immune: " + sentence[sentence.lower().find("immune to") + len("immune to"):]
+                log(f"Found: {construct_immunities}")
+            
+            if "speed of" in sentence.lower() and "feet" in sentence.lower():
+                log(f"Found Speed")
+                for word in sentence.split(" "):
+                    if word.isnumeric():
+                        construct_speed = f"{word} feet"
+                        break
+                log(f"Found: {construct_speed}")
+                
+            if "precise" in sentence.lower() or "imprecise" in sentence.lower() or "vague" in sentence.lower() or "no sense" in sentence.lower():
+                log(f"Found Senses")
+                construct_senses = sentence[find_earliest_position(sentence.find("precise"), sentence.find("imprecise"), sentence.find("vague"), sentence.find("no sense")):]
+                log(f"Found: {construct_senses}")
+                
+            if "modifiers by" in sentence and "Increase" in sentence:
+                log("Found Modifier Increases")
+                strength_increase = ""
+                dexterity_increase = ""
+                constitution_increase = ""
+                intelligence_increase = ""
+                wisdom_increase = ""
+                charisma_increase = ""
+                increase_by = ""
+                
+                for word in sentence.split(" ").reverse():
+                    if word.isnumeric():
+                        increase_by = word
+                    else:
+                        if word == "Strength":
+                            strength_increase = increase_by
+                        if word == "Dexterity":
+                            dexterity_increase = increase_by
+                        if word == "Constitution":
+                            constitution_increase = increase_by
+                        if word == "Intelligence":
+                            intelligence_increase = increase_by
+                        if word == "Wisdom":
+                            wisdom_increase = increase_by
+                        if word == "Charisma":
+                            charisma_increase = increase_by
+                            
+                construct_stat_line = f"{strength_increase},{dexterity_increase},{constitution_increase},{intelligence_increase},{wisdom_increase},{charisma_increase}"
+                log(f"Found: {construct_stat_line}")            
+
+            if "attack damage from" in sentence.lower() and "Increase" in sentence:
+                if "two dice" in sentence:
+                    log("Found Extra Dice of Damage")
+                    construct_extra_damage = "Extra Dice"
+                
+            if "additional damage" in sentence:
+                log("Found Extra Damage")
+                for word in sentence.split(" "):
+                    if word.isnumeric():
+                        construct_extra_damage = word
+                        log(f"Found: {construct_extra_damage}")
+                
+                if "magical" in sentence.lower():
+                    construct_extra_damage += "(Magical)"
+                    log("Found Magical Attacks")
+        
+        construct_output.append([construct_type_name, construct_link, construct_traits, construct_size, construct_stat_line, construct_hp, construct_attack_proficiency, construct_attacks, construct_extra_damage, construct_defense_proficiency, construct_saving_throws_proficiency, construct_immunities, construct_skill_proficiency, construct_speed, construct_senses])            
+        log([construct_type_name, construct_link, construct_traits, construct_size, construct_stat_line, construct_hp, construct_attack_proficiency, construct_attacks, construct_extra_damage, construct_defense_proficiency, construct_saving_throws_proficiency, construct_immunities, construct_skill_proficiency, construct_speed, construct_senses])    
+    
+    return construct_output                
+            
+            
  
 def organize_animal_companion_data(url=animal_companion_url):
     log("Getting Animal Companion Data")
@@ -479,5 +733,21 @@ def organize_animal_companion_data(url=animal_companion_url):
             
         organized_output.append(f"\"{ac[0]}\", \"{ac[1]}\", \"{ac[2]}\", \"{ac[3]}\", \"{attack_name_str}\", \"{attack_type_str}\", \"{attack_damage_dice_str}\", \"{attack_damage_type_str}\", \"{strength_str}\",\"{dexterity_str}\",\"{constitution_str}\", \"{intelligence_str}\",\"{wisdom_str}\",\"{charisma_str}\", {ac[6]}, \"{skill_str}\", \"{ac[8]}\", \"{ac[9]}\", \"{ac[10]}\", \"{ac[11]}\", \"{ac[12]}\"")
         log(f"Added \"{ac[0]}\", \"{ac[1]}\", \"{ac[2]}\", \"{ac[3]}\", \"{attack_name_str}\", \"{attack_type_str}\", \"{attack_damage_dice_str}\", \"{attack_damage_type_str}\", \"{strength_str}\",\"{dexterity_str}\",\"{constitution_str}\", \"{intelligence_str}\",\"{wisdom_str}\",\"{charisma_str}\", {ac[6]}, \"{skill_str}\", \"{ac[8]}\", \"{ac[9]}\", \"{ac[10]}\", \"{ac[11]}\", \"{ac[12]}\" to Organized Output")
+
+    return organized_output
+
+def organize_advanced_data():
+    log("Getting Equipment Data")
+    output = grab_advanced_option_data()
+
+    organized_output = []
+
+    log("Organizing Equipment Data")
+    for option in output:
+        full_option_str = "\""
+        o = "\",\"".join(option)
+        full_option_str += o + "\""
+        organized_output.append(full_option_str)
+        log(f"Adding {full_option_str} to Organzied Output")
 
     return organized_output

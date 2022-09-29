@@ -34,7 +34,7 @@ def remove_tags(text, tag_to_remove="", remove_inside=False):
         if text.find("<" + tag_to_remove) != -1:
             return remove_tags(text, tag_to_remove, remove_inside)
         else:
-            return text
+            return text.strip()
 
 def find_earliest_position(*args):
     if len(args) == 1:
