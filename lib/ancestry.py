@@ -34,8 +34,8 @@ def grab_ancestry_data():
   driver = webdriver.Chrome('./chromedriver.exe')
   log("Going to Page: " + url)
   driver.get(url)
-  #log("Waiting for Page to Load")
-  #time.sleep(5)
+  log("Waiting for Page to Load")
+  time.sleep(5)
 
   log("Getting Page Source")
   html = driver.page_source
@@ -67,8 +67,8 @@ def grab_ancestry_data():
     log("Opening Ancestry Page")
     ancestry_driver = webdriver.Chrome('./chromedriver.exe')
     ancestry_driver.get(output_link)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Getting Ancestry Page Source")
     ancestry_html = ancestry_driver.page_source

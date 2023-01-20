@@ -49,8 +49,8 @@ def grab_background_data():
         driver = webdriver.Chrome('./chromedriver.exe')
         log(f"Going to Page: {url}{i}")
         driver.get(f"{url}{i}")
-        #log("Waiting for Page to Load")
-        #time.sleep(5)
+        log("Waiting for Page to Load")
+        time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source

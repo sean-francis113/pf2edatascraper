@@ -35,8 +35,8 @@ def grab_feature_data():
     driver = webdriver.Chrome('./chromedriver.exe')
     log("Going to Page: " + url)
     driver.get(url)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -63,8 +63,8 @@ def grab_feature_data():
                 log("Opening Class Page")
                 class_driver = webdriver.Chrome("./chromedriver.exe")
                 class_driver.get(class_link)
-                #log("Waiting for Page to Load")
-                #time.sleep(5)
+                log("Waiting for Page to Load")
+                time.sleep(5)
 
                 log("Getting Class Page Source")
                 class_html = class_driver.page_source

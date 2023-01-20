@@ -34,8 +34,8 @@ def grab_heritage_data():
     driver = webdriver.Chrome('./chromedriver.exe')
     log("Going to Page: " + url)
     driver.get(url)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -65,8 +65,8 @@ def grab_heritage_data():
       log("Opening Ancestry Page")
       ancestry_driver = webdriver.Chrome('./chromedriver.exe')
       ancestry_driver.get(output_link)
-      #log("Waiting for Page to Load")
-      #time.sleep(5)
+      log("Waiting for Page to Load")
+      time.sleep(5)
 
       log("Getting Ancestry Page Source")
       ancestry_html = ancestry_driver.page_source
@@ -92,8 +92,8 @@ def grab_heritage_data():
       ancestry_driver.close()
       heritage_driver = webdriver.Chrome("./chromedriver.exe")
       heritage_driver.get(heritage_list_link)
-      #log("Waiting for Page to Load")
-      #time.sleep(5)
+      log("Waiting for Page to Load")
+      time.sleep(5)
 
       log("Setting up BeautifulSoup with Page Source")
       heritage_html = heritage_driver.page_source
@@ -214,8 +214,8 @@ def grab_heritage_data():
             log("Opening Versatile Heritage Browser")
             versatile_heritage_driver = webdriver.Chrome("./chromedriver.exe")
             versatile_heritage_driver.get(versatile_heritage_link)
-            #log("Waiting for Page to Load")
-            #time.sleep(5)
+            log("Waiting for Page to Load")
+            time.sleep(5)
 
             log("Setting up BeautifulSoup with Page Source")
             versatile_heritage_html = versatile_heritage_driver.page_source
@@ -242,8 +242,8 @@ def grab_heritage_data():
                         log("Opening Versatile Heritage Ancestry Browser")
                         vh_ancestry_driver = webdriver.Chrome("./chromedriver.exe")
                         vh_ancestry_driver.get(vh_ancestry_link)
-                        #log("Waiting for Page to Load")
-                        #time.sleep(5)
+                        log("Waiting for Page to Load")
+                        time.sleep(5)
 
                         log("Setting up BeautifulSoup with Page Source")
                         vh_ancestry_html = vh_ancestry_driver.page_source
