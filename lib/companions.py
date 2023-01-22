@@ -615,6 +615,8 @@ def grab_construct_companion_data():
                     log(f"Found {skill}")
                     for proficiency in proficiency_list:
                         if proficiency.lower() in sentence.lower():
+                            if len(construct_skill_proficiency) >= 1 and construct_skill_proficiency[-1] != ",":
+                                construct_skill_proficiency += ","
                             construct_skill_proficiency += f"{skill}:{proficiency},"
                             log(f"Found {skill}: {proficiency}")
                             break
@@ -681,16 +683,28 @@ def grab_construct_companion_data():
                 
                 if "Strength" in sentence:
                     strength_increase = increase_by
+                else:
+                    strength_increase = "0"
                 if "Dexterity" in sentence:
                     dexterity_increase = increase_by
+                else:
+                    dexterity_increase = "0"    
                 if "Constitution" in sentence:
                     constitution_increase = increase_by
+                else:
+                    constitution_increase = "0"
                 if "Intelligence" in sentence:
                     intelligence_increase = increase_by
+                else:
+                    intelligence_increase = "0"
                 if "Wisdom" in sentence:
                     wisdom_increase = increase_by
+                else:
+                    wisdom_increase = "0"
                 if "Charisma" in sentence:
                     charisma_increase = increase_by
+                else:
+                    charisma_increase = "0"
                             
                 construct_stat_line = f"{strength_increase},{dexterity_increase},{constitution_increase},{intelligence_increase},{wisdom_increase},{charisma_increase}"
                 log(f"Found: {construct_stat_line}")            

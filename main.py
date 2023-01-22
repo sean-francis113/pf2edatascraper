@@ -10,11 +10,16 @@ import lib.heritages
 import lib.backgrounds
 import lib.class_features
 import lib.spells
+import lib.companions
+import lib.eidolon
+import lib.equipment
+import lib.feats
+import lib.helper
 
 try:
     log_file = lib.log.open_log_file()
 
-    lib.companions.upload_companion_data()
+    lib.feats.upload_feat_data()
 
     lib.log.close_log_file()
 
