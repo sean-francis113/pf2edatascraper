@@ -13,22 +13,22 @@ error_limit = 5
 test_limit = 0
 
 def upload_spell_data():
-    #log("Starting Spell Table Upload Preperation")
-    #spell_table_data = organize_spell_table_data()
-    #log("Preparation Done")
+    log("Starting Spell Table Upload Preperation")
+    spell_table_data = organize_spell_table_data()
+    log("Preparation Done")
 
-    #log("Clearing Table")
-    #conn, row_count, result = lib.db.query_database("DELETE FROM official_spell_tables;", get_result=True, close_conn=False)
+    log("Clearing Table")
+    conn, row_count, result = lib.db.query_database("DELETE FROM official_spell_tables;", get_result=True, close_conn=False)
 
-    #log("Starting INSERT Process")
-    #for spell_table in spell_table_data:
-        #log("Inserting " + spell_table + " Into Database")
-        #conn = lib.db.query_database("INSERT INTO official_spell_tables VALUES (" + spell_table + ");", connection=conn, close_conn=False)[0]
+    log("Starting INSERT Process")
+    for spell_table in spell_table_data:
+        log("Inserting " + spell_table + " Into Database")
+        conn = lib.db.query_database("INSERT INTO official_spell_tables VALUES (" + spell_table + ");", connection=conn, close_conn=False)[0]
 
-    #log("Commiting Database Changes")
-    #conn.commit()
-    #log("Closing Connection")
-    #conn.close()
+    log("Commiting Database Changes")
+    conn.commit()
+    log("Closing Connection")
+    conn.close()
 
     log("Starting Spell Upload Preperation")
     spell_data = organize_spell_data()
