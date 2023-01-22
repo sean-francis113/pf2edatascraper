@@ -18,7 +18,7 @@ import lib.equipment
 try:
     log_file = lib.log.open_log_file()
 
-    lib.companions.grab_construct_companion_data()
+    lib.companions.upload_companion_data()
 
     lib.log.close_log_file()
 

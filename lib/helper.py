@@ -1,7 +1,7 @@
 from lib.log import log_text as log
 
 def remove_tags(text, tag_to_remove="", remove_inside=False):
-    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/"]
+    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/", "li", "ul", "ol"]
     
     if type(text) != str:
         text = str(text)
@@ -15,7 +15,14 @@ def remove_tags(text, tag_to_remove="", remove_inside=False):
         start_pos = text.find("<" + tag_to_remove)
 
         if start_pos == -1:
-            log("Could Not Find Tag To Remove. Returning.")
+            log("Could Not Find Start Position. Checking for End Position")
+            end_pos = text.find(f"</{tag_to_remove}>")
+            if end_pos > -1:
+                log("Found End Position. Removing.")
+                text.replace(f"</{tag_to_remove}>", "")
+            else:
+                log("Found No End Position.")
+            log("Returning.")
             return text
 
         log("Start: " + str(start_pos))

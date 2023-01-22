@@ -48,6 +48,18 @@ def upload_companion_data():
         log("Inserting " + option + " Into Database")
         conn = lib.db.query_database("INSERT INTO official_companion_options VALUES (" + option + ");", connection=conn, close_conn=False)[0]
 
+    log("Starting Construct Companion Upload Preperation")
+    construct_companion_data = organize_construct_companion_data()
+    log("Preparation Done")
+    
+    log("Clearing Table")
+    conn, row_count, result = lib.db.query_database("DELETE FROM official_construct_companions;", get_result=True, close_conn=False)
+
+    log("Starting INSERT Process")
+    for construct in construct_companion_data:
+        log("Inserting " + construct + " Into Database")
+        conn = lib.db.query_database("INSERT INTO official_construct_companions VALUES (" + construct + ");", connection=conn, close_conn=False)[0]
+
     log("Commiting Database Changes")
     conn.commit()
     log("Closing Connection")
@@ -63,8 +75,8 @@ def grab_animal_companion_data(url=animal_companion_url):
     driver = webdriver.Chrome('./chromedriver.exe')
     log("Going to Page: " + url)
     driver.get(url)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -273,8 +285,6 @@ def grab_advanced_option_data():
     
     advanced_option_output = []
     
-    #Table Columns: Name, link, strength, dexterity, constitution, intelligence, wisdom, charisma, extra_wep_damage, skill_increases, attack_increases, defenses_increases, size_increases
-    
     for url in url_list:        
         log("Opening Browser")
         driver = webdriver.Chrome('./chromedriver.exe')
@@ -423,17 +433,17 @@ def grab_advanced_option_data():
 
             log("Finding Defense Increases")
             for sentence in description_sentences:
-                if "gain resistance" in sentence:
+                if "resistance" in sentence and "resistance" not in defenses_increases:
                     log("Found Resistances")
                     word_list = sentence.split(" ")
                     for word in word_list:
                         if word.isnumeric():
                             value = word
                             defenses_increases += f"resistance {value} (see page for details),"
-                if "barding" in sentence:
+                if "barding" in sentence and "barding" not in defenses_increases:
                     log("Found Barding")
                     defenses_increases += "barding,"
-                if "unarmored" in sentence:
+                if "unarmored" in sentence and "unarmored" not in defenses_increases:
                     log("Found Unarmored")
                     defenses_increases += "unarmored,"
             
@@ -506,11 +516,13 @@ def grab_construct_companion_data():
         for l in links:
             if l.get("href").startswith("Rules.aspx"):
                 construct_link = "https://2e.aonprd.com/" + l.get("href")
+                
+        heading_pos = html.find(f"{heading.text}</a>")
         
         log(f"Category Name is {construct_type_name}")
-        description_start_pos = html.find("<br>", heading.sourcepos) + len("<br>")
+        description_start_pos = html.find("<br>", heading_pos) + len("<br>")
         if description_start_pos == len("<br>") - 1:
-            description_start_pos = html.find("<br/>", heading.sourcepos) + len("<br/>")
+            description_start_pos = html.find("<br/>", heading_pos) + len("<br/>")
             
         description_end_pos = html.find("<h1 ", description_start_pos)
         
@@ -527,6 +539,8 @@ def grab_construct_companion_data():
         
         log("Searching Through Description Sentence by Sentence")
         for sentence in description_sentences:
+            sentence = sentence.strip()
+            log(f"Searching: {sentence}")
             if "Small" in sentence or "Medium" in sentence or "Large" in sentence:
                 log("Found Sizes")
                 for size in size_list:
@@ -574,7 +588,7 @@ def grab_construct_companion_data():
             if "all saving throws" in sentence.lower():
                 log("Found All Saving Throws")
                 for proficiency in proficiency_list:
-                    if proficiency in sentence:
+                    if proficiency in sentence or proficiency.lower() in sentence:
                         construct_saving_throws_proficiency = proficiency
                         log(f"Found All Saving Throws: {construct_saving_throws_proficiency}")
                         break
@@ -583,11 +597,18 @@ def grab_construct_companion_data():
                     if save in sentence or save.lower() in sentence:
                         log(f"Found {save}")
                         for proficiency in proficiency_list:
-                            if proficiency in sentence:
+                            if proficiency in sentence or proficiency.lower() in sentence:
                                 construct_saving_throws_proficiency += f"{save}:{proficiency},"
                                 log(f"Found {save}: {proficiency}")
                                 break
                 construct_saving_throws_proficiency = construct_saving_throws_proficiency[:-1]
+            elif "saving throws" in sentence.lower():
+                log("Found All Saving Throws")
+                for proficiency in proficiency_list:
+                    if proficiency in sentence or proficiency.lower() in sentence:
+                        construct_saving_throws_proficiency = proficiency
+                        log(f"Found All Saving Throws: {construct_saving_throws_proficiency}")
+                        break
                 
             for skill in skill_list:
                 if skill.lower() in sentence.lower():
@@ -603,6 +624,12 @@ def grab_construct_companion_data():
             if "base ability modifiers" in sentence.lower():
                 log("Finding Stat Line")
                 construct_stat_line = sentence[sentence.find("Str"):sentence.find("Cha") + len("Cha") + 3]
+                construct_stat_line = construct_stat_line.replace("Str ", "")
+                construct_stat_line = construct_stat_line.replace("Dex ", "")
+                construct_stat_line = construct_stat_line.replace("Con ", "")
+                construct_stat_line = construct_stat_line.replace("Int ", "")
+                construct_stat_line = construct_stat_line.replace("Wis ", "")
+                construct_stat_line = construct_stat_line.replace("Cha ", "")
                 log(f"Found: {construct_stat_line}")
                 
             if "hit points" in sentence.lower() and construct_hp == "":
@@ -649,22 +676,21 @@ def grab_construct_companion_data():
                 charisma_increase = ""
                 increase_by = ""
                 
-                for word in sentence.split(" ").reverse():
-                    if word.isnumeric():
-                        increase_by = word
-                    else:
-                        if word == "Strength":
-                            strength_increase = increase_by
-                        if word == "Dexterity":
-                            dexterity_increase = increase_by
-                        if word == "Constitution":
-                            constitution_increase = increase_by
-                        if word == "Intelligence":
-                            intelligence_increase = increase_by
-                        if word == "Wisdom":
-                            wisdom_increase = increase_by
-                        if word == "Charisma":
-                            charisma_increase = increase_by
+                words = sentence.split(" ")
+                increase_by = words[-1]
+                
+                if "Strength" in sentence:
+                    strength_increase = increase_by
+                if "Dexterity" in sentence:
+                    dexterity_increase = increase_by
+                if "Constitution" in sentence:
+                    constitution_increase = increase_by
+                if "Intelligence" in sentence:
+                    intelligence_increase = increase_by
+                if "Wisdom" in sentence:
+                    wisdom_increase = increase_by
+                if "Charisma" in sentence:
+                    charisma_increase = increase_by
                             
                 construct_stat_line = f"{strength_increase},{dexterity_increase},{constitution_increase},{intelligence_increase},{wisdom_increase},{charisma_increase}"
                 log(f"Found: {construct_stat_line}")            
@@ -716,10 +742,10 @@ def organize_animal_companion_data(url=animal_companion_url):
         charisma_str = stat_list[10]
         
         for attack in ac[4]:
-            attack_name_str += attack[0].strip()
-            attack_type_str += attack[1].strip() + ","
-            attack_damage_dice_str += attack[2].strip() + ","
-            attack_damage_type_str += attack[3].strip() + ","
+            attack_name_str += attack[0].strip()[:-1] + ";"
+            attack_type_str += attack[1].strip() + ";"
+            attack_damage_dice_str += attack[2].strip() + ";"
+            attack_damage_type_str += attack[3].strip() + ";"
             
         attack_name_str = attack_name_str[:-1]
         attack_type_str = attack_type_str[:-1]
@@ -731,18 +757,34 @@ def organize_animal_companion_data(url=animal_companion_url):
         
         skill_str = skill_str[:-1]
             
-        organized_output.append(f"\"{ac[0]}\", \"{ac[1]}\", \"{ac[2]}\", \"{ac[3]}\", \"{attack_name_str}\", \"{attack_type_str}\", \"{attack_damage_dice_str}\", \"{attack_damage_type_str}\", \"{strength_str}\",\"{dexterity_str}\",\"{constitution_str}\", \"{intelligence_str}\",\"{wisdom_str}\",\"{charisma_str}\", {ac[6]}, \"{skill_str}\", \"{ac[8]}\", \"{ac[9]}\", \"{ac[10]}\", \"{ac[11]}\", \"{ac[12]}\"")
+        organized_output.append(f"\"{ac[0]}\", \"{ac[1]}\", \"{ac[2]}\", \"{ac[3]}\", \"{attack_name_str}\", \"{attack_type_str}\", \"{attack_damage_dice_str}\", \"{attack_damage_type_str}\", \"{strength_str}\",\"{dexterity_str}\",\"{constitution_str}\", \"{intelligence_str}\",\"{wisdom_str}\",\"{charisma_str}\", {ac[6]}, \"{skill_str}\", \"{ac[8][:-1]}\", \"{ac[9]}\", \"{ac[10]}\", \"{ac[11]}\", \"{ac[12]}\"")
         log(f"Added \"{ac[0]}\", \"{ac[1]}\", \"{ac[2]}\", \"{ac[3]}\", \"{attack_name_str}\", \"{attack_type_str}\", \"{attack_damage_dice_str}\", \"{attack_damage_type_str}\", \"{strength_str}\",\"{dexterity_str}\",\"{constitution_str}\", \"{intelligence_str}\",\"{wisdom_str}\",\"{charisma_str}\", {ac[6]}, \"{skill_str}\", \"{ac[8]}\", \"{ac[9]}\", \"{ac[10]}\", \"{ac[11]}\", \"{ac[12]}\" to Organized Output")
 
     return organized_output
 
 def organize_advanced_data():
-    log("Getting Equipment Data")
+    log("Getting Advanced Option Data")
     output = grab_advanced_option_data()
 
     organized_output = []
 
-    log("Organizing Equipment Data")
+    log("Organizing Advanced Option Data")
+    for option in output:
+        full_option_str = "\""
+        o = "\",\"".join(option)
+        full_option_str += o + "\""
+        organized_output.append(full_option_str)
+        log(f"Adding {full_option_str} to Organzied Output")
+
+    return organized_output
+
+def organize_construct_companion_data():
+    log("Getting Construct Data")
+    output = grab_construct_companion_data()
+
+    organized_output = []
+
+    log("Organizing Construct Data")
     for option in output:
         full_option_str = "\""
         o = "\",\"".join(option)
