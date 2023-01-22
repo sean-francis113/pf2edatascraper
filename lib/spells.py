@@ -1,4 +1,3 @@
-from curses.ascii import isalpha
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -14,22 +13,22 @@ error_limit = 5
 test_limit = 0
 
 def upload_spell_data():
-    log("Starting Spell Table Upload Preperation")
-    spell_table_data = organize_spell_table_data()
-    log("Preparation Done")
+    #log("Starting Spell Table Upload Preperation")
+    #spell_table_data = organize_spell_table_data()
+    #log("Preparation Done")
 
-    log("Clearing Table")
-    conn, row_count, result = lib.db.query_database("DELETE FROM official_spell_tables;", get_result=True, close_conn=False)
+    #log("Clearing Table")
+    #conn, row_count, result = lib.db.query_database("DELETE FROM official_spell_tables;", get_result=True, close_conn=False)
 
-    log("Starting INSERT Process")
-    for spell_table in spell_table_data:
-        log("Inserting " + spell_table + " Into Database")
-        conn = lib.db.query_database("INSERT INTO official_spell_tables VALUES (" + spell_table + ");", connection=conn, close_conn=False)[0]
+    #log("Starting INSERT Process")
+    #for spell_table in spell_table_data:
+        #log("Inserting " + spell_table + " Into Database")
+        #conn = lib.db.query_database("INSERT INTO official_spell_tables VALUES (" + spell_table + ");", connection=conn, close_conn=False)[0]
 
-    log("Commiting Database Changes")
-    conn.commit()
-    log("Closing Connection")
-    conn.close()
+    #log("Commiting Database Changes")
+    #conn.commit()
+    #log("Closing Connection")
+    #conn.close()
 
     log("Starting Spell Upload Preperation")
     spell_data = organize_spell_data()
@@ -55,8 +54,8 @@ def grab_spell_table_data():
     driver = webdriver.Chrome('./chromedriver.exe')
     log("Going to Page: " + spell_table_url)
     driver.get(spell_table_url)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -82,8 +81,8 @@ def grab_spell_table_data():
                 log("Opening Class Page")
                 class_driver = webdriver.Chrome("./chromedriver.exe")
                 class_driver.get(class_link)
-                #log("Waiting for Page to Load")
-                #time.sleep(5)
+                log("Waiting for Page to Load")
+                time.sleep(5)
 
                 log("Getting Class Page Source")
                 class_html = class_driver.page_source
@@ -165,14 +164,13 @@ def grab_spell_data():
         spell_tradition_str = ""
         spell_actions = ""
         spell_summary = ""
-        spell_heighten = ""
 
         log("Opening Browser")
         driver = webdriver.Chrome('./chromedriver.exe')
         log(f"Going to Page: {spell_link}")
         driver.get(f"{spell_link}")
-        #log("Waiting for Page to Load")
-        #time.sleep(5)
+        log("Waiting for Page to Load")
+        time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source
@@ -204,13 +202,10 @@ def grab_spell_data():
 
         if spell_name_level_str.find("Spell") > -1:
             spell_name = spell_name_level_str[:spell_name_level_str.find("Spell")]
-            spell_level = spell_name_level_str[spell_name_level_str.find("Spell"):]
+            spell_level = spell_name_level_str[spell_name_level_str.find("Spell"):].split(" ")[1]
         elif spell_name_level_str.find("Cantrip") > -1:
             spell_name = spell_name_level_str[:spell_name_level_str.find("Cantrip")]
-            spell_level = spell_level = spell_name_level_str[spell_name_level_str.find("Cantrip"):]
-        elif spell_name_level_str.find("Focus") > -1:
-            spell_name = spell_name_level_str[:spell_name_level_str.find("Focus")]
-            spell_level = spell_level = spell_name_level_str[spell_name_level_str.find("Focus"):]
+            spell_level = "Cantrip"
 
         log(f"Found: {spell_name}, Level {spell_level}")
         log("Finding Spell Tradition(s)")
@@ -243,9 +238,9 @@ def grab_spell_data():
             elif "Free Action" in exist_list[0]:
                 spell_actions = "Free"
         else:
-            found_single = False
-            found_double = False
-            found_triple = False
+            found_single = True
+            found_double = True
+            found_triple = True
 
             for e in exist_list:
                 if "Single Action" in e:
@@ -261,17 +256,6 @@ def grab_spell_data():
                 spell_actions = "Variable (1-2)"
             elif found_double and found_triple:
                 spell_actions = "Variable (2-3)"
-            else:
-                action_start = html.find("<b>Cast</b>", spell_name_level_pos) + len("<b>Cast</b>")
-                action_end = html.find("<", action_start)
-                spell_actions = html[action_start:action_end]
-                while(True):
-                    if spell_actions[-1].isalnum() == False:
-                        spell_actions = spell_actions[:-1]
-                    else:
-                        break
-            
-                spell_actions = spell_actions.strip()
 
         log(f"Found {spell_actions}")
 
@@ -290,14 +274,9 @@ def grab_spell_data():
         spell_summary = remove_tags(spell_summary, tag_to_remove="u")
         spell_summary = remove_tags(spell_summary, tag_to_remove="b")
         spell_summary = remove_tags(spell_summary, tag_to_remove="a")
-        
-        if html.find("<b>Heightened", summary_start_pos) > -1:
-            spell_heighten = "Yes"
-        else:
-            spell_heighten = "No"
 
-        spell_output.append([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary, spell_heighten])
-        log([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary, spell_heighten])
+        spell_output.append([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary])
+        log([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary])
 
         if(test_limit > 0 and i == test_limit):
             break

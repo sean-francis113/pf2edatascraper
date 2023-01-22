@@ -10,10 +10,6 @@ import lib.heritages
 import lib.backgrounds
 import lib.class_features
 import lib.spells
-import lib.feats
-import lib.companions
-import lib.eidolon
-import lib.equipment
 
 try:
     log_file = lib.log.open_log_file()
