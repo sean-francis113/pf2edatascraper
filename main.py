@@ -15,11 +15,22 @@ import lib.eidolon
 import lib.equipment
 import lib.feats
 import lib.helper
+import lib.update
 
 try:
     log_file = lib.log.open_log_file()
 
-    lib.feats.upload_feat_data()
+    if(lib.update.check_for_update()):
+        lib.ancestry.upload_ancestry_data()
+        lib.backgrounds.upload_background_data()
+        lib.class_features.upload_features_data()
+        lib.companions.upload_companion_data()
+        lib.eidolon.upload_eidolon_data()
+        lib.equipment.upload_equipment_data()
+        lib.feats.upload_feat_data()
+        lib.heritages.upload_heritage_data()
+        lib.player_class.upload_class_data()
+        lib.spells.upload_spell_data()
 
     lib.log.close_log_file()
 
