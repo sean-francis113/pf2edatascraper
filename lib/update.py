@@ -36,7 +36,7 @@ def check_for_update():
     global update_file
     text_lines = []
     
-    update_file = open_update_file()
+    update_file = open_update_file("r")
     text_lines = update_file.readlines()
     
     if len(text_lines) == 0:
