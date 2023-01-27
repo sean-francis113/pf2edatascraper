@@ -49,9 +49,18 @@ def grab_equipment_data():
     html = driver.page_source
     log("Setting up BeautifulSoup with Source")
     soup = BeautifulSoup(html, "html.parser")
+    
+    button_list = driver.find_elements(By.TAG_NAME, "button")
+    
+    for button in button_list:
+        if button.text.lower().startswith("load remaining"):
+            button.click()
+            
+    log("Waiting for Page to Load")
+    time.sleep(5)
 
     log("Finding Table")
-    container = soup.find("table", id="ctl00_RadDrawer1_Content_MainContent_Rad_AllEquipment_ctl00")
+    container = soup.find("table", _class="column gap-medium")
     
     log("Getting Table Body")
     table_body = container.find("tbody")
@@ -60,6 +69,7 @@ def grab_equipment_data():
     table_rows = table_body.find_all("tr")
     
     ignore_col = [2, 3, 4, 6, 10]
+    link_list = ["Equipment.aspx", "Vehicles.aspx", "Weapons.aspx", "Armor.aspx", "Shields.aspx"]
     
     i = 1
     get_link = True
@@ -82,9 +92,10 @@ def grab_equipment_data():
             if get_link:
                 links = data.find_all("a")
                 for l in links:
-                    if l.get("href").startswith("Equipment.aspx") or l.get("href").startswith("Vehicles.aspx") or l.get("href").startswith("Weapons.aspx") or l.get("href").startswith("Armor.aspx") or l.get("href").startswith("Shields.aspx"):
-                        data_output.append("https://2e.aonprd.com/" + l.get("href"))
-                        get_link = False
+                    for s in link_list:
+                        if l.get("href").startswith(s):
+                            data_output.append("https://2e.aonprd.com/" + l.get("href"))
+                            get_link = False
             
             i += 1
         
