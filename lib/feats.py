@@ -4,7 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position, find_which_exists
+from lib.helper import remove_tags, find_earliest_position, open_selenium, find_which_exists
 from lib.log import log_text as log
 
 feat_url = "https://2e.aonprd.com/Feats.aspx?ID="
@@ -38,19 +38,16 @@ def grab_feat_data():
     log("Starting to Grab Feats")
 
     i = 1
+    driver = open_selenium()
 
-    while(True):
+    while(True and driver != None):
         feat_name = ""
         feat_link = f"{feat_url}{i}"
         feat_level = ""
         feat_summary = ""
 
-        log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
         log(f"Going to Page: {feat_link}")
         driver.get(f"{feat_link}")
-        #log("Waiting for Page to Load")
-        #time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source

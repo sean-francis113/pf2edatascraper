@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position, find_which_exists
+from lib.helper import remove_tags, find_earliest_position, open_selenium, find_which_exists
 from lib.log import log_text as log
 
 animal_companion_url = "https://2e.aonprd.com/AnimalCompanions.aspx"
@@ -72,7 +72,7 @@ def grab_animal_companion_data(url=animal_companion_url):
     animal_companion_output = []
 
     log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + url)
     driver.get(url)
     log("Waiting for Page to Load")
@@ -287,7 +287,7 @@ def grab_advanced_option_data():
     
     for url in url_list:        
         log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
+        driver = open_selenium()
         log("Going to Page: " + url)
         driver.get(url)
     
@@ -472,7 +472,7 @@ def grab_construct_companion_data():
     construct_output = []
     
     log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + construct_companion_url)
     driver.get(construct_companion_url)
 

@@ -5,7 +5,7 @@ import time
 
 import lib.db
 from lib.log import log_text as log
-from lib.helper import remove_tags, find_earliest_position
+from lib.helper import remove_tags, find_earliest_position, open_selenium
 
 url = "https://2e.aonprd.com/Ancestries.aspx"
 
@@ -30,8 +30,7 @@ def upload_ancestry_data():
 def grab_ancestry_data():
   ancestry_output = []
 
-  log("Opening Browser")
-  driver = webdriver.Chrome('./chromedriver.exe')
+  driver = open_selenium()
   log("Going to Page: " + url)
   driver.get(url)
 
@@ -63,7 +62,7 @@ def grab_ancestry_data():
         break
 
     log("Opening Ancestry Page")
-    ancestry_driver = webdriver.Chrome('./chromedriver.exe')
+    ancestry_driver = open_selenium()
     ancestry_driver.get(output_link)
     log("Waiting for Page to Load")
     time.sleep(5)

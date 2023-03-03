@@ -4,7 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-from lib.helper import remove_tags
+from lib.helper import remove_tags, open_selenium
 from lib.log import log_text as log
 
 url = "https://2e.aonprd.com/Ancestries.aspx"
@@ -31,7 +31,7 @@ def grab_heritage_data():
     heritage_output = []
 
     log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + url)
     driver.get(url)
     log("Waiting for Page to Load")
@@ -63,7 +63,7 @@ def grab_heritage_data():
           break
 
       log("Opening Ancestry Page")
-      ancestry_driver = webdriver.Chrome('./chromedriver.exe')
+      ancestry_driver = open_selenium()
       ancestry_driver.get(output_link)
       log("Waiting for Page to Load")
       time.sleep(5)
@@ -90,7 +90,7 @@ def grab_heritage_data():
 
       log("Closing Ancestry Browser. Opening Heritage Browser")
       ancestry_driver.close()
-      heritage_driver = webdriver.Chrome("./chromedriver.exe")
+      heritage_driver = open_selenium()
       heritage_driver.get(heritage_list_link)
       log("Waiting for Page to Load")
       time.sleep(5)
@@ -212,7 +212,7 @@ def grab_heritage_data():
             versatile_heritage_link = "https://2e.aonprd.com/" + link.get("href")
 
             log("Opening Versatile Heritage Browser")
-            versatile_heritage_driver = webdriver.Chrome("./chromedriver.exe")
+            versatile_heritage_driver = open_selenium()
             versatile_heritage_driver.get(versatile_heritage_link)
             log("Waiting for Page to Load")
             time.sleep(5)
@@ -240,7 +240,7 @@ def grab_heritage_data():
                         vh_ancestry_link = "https://2e.aonprd.com/" + l.get("href")
 
                         log("Opening Versatile Heritage Ancestry Browser")
-                        vh_ancestry_driver = webdriver.Chrome("./chromedriver.exe")
+                        vh_ancestry_driver = open_selenium()
                         vh_ancestry_driver.get(vh_ancestry_link)
                         log("Waiting for Page to Load")
                         time.sleep(5)

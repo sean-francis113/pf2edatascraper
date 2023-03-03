@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position, find_which_exists
+from lib.helper import remove_tags, find_earliest_position, open_selenium, find_which_exists
 from lib.log import log_text as log
 
 url = "https://2e.aonprd.com/Eidolons.aspx?ID="
@@ -66,7 +66,7 @@ def grab_eidolon_data():
         eidolon_transcendence_ability = []        
 
         log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
+        driver = open_selenium()
         log(f"Going to Page: {eidolon_link}")
         driver.get(f"{eidolon_link}")
         #log("Waiting for Page to Load")

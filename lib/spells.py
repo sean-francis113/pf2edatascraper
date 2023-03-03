@@ -4,7 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position, find_which_exists
+from lib.helper import remove_tags, find_earliest_position, find_which_exists, open_selenium
 from lib.log import log_text as log
 
 spell_table_url = "https://2e.aonprd.com/Classes.aspx"
@@ -35,12 +35,12 @@ def upload_spell_data():
     log("Preparation Done")
 
     log("Clearing Table")
-    conn, row_count, result = lib.db.query_database("DELETE FROM official_spells;", get_result=True, close_conn=False)
+    conn, row_count, result = lib.db.query_database("DELETE FROM all_spells;", get_result=True, close_conn=False)
 
     log("Starting INSERT Process")
     for spell in spell_data:
         log("Inserting " + spell + " Into Database")
-        conn = lib.db.query_database("INSERT INTO official_spells VALUES (" + spell + ");", connection=conn, close_conn=False)[0]
+        conn = lib.db.query_database("INSERT INTO all_spells VALUES (" + spell + ");", connection=conn, close_conn=False)[0]
 
     log("Commiting Database Changes")
     conn.commit()
@@ -50,8 +50,7 @@ def upload_spell_data():
 def grab_spell_table_data():
     spell_table_output = []
 
-    log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + spell_table_url)
     driver.get(spell_table_url)
     log("Waiting for Page to Load")
@@ -79,7 +78,13 @@ def grab_spell_table_data():
                 log("Found " + class_name + " With the Following Link: " + class_link)
 
                 log("Opening Class Page")
-                class_driver = webdriver.Chrome("./chromedriver.exe")
+                class_driver = open_selenium()
+
+                if class_driver == None and len(spell_table_output) > 0:
+                    return spell_table_output
+                elif class_driver == None and len(spell_table_output) == 0:
+                    return None
+
                 class_driver.get(class_link)
                 log("Waiting for Page to Load")
                 time.sleep(5)
@@ -165,8 +170,13 @@ def grab_spell_data():
         spell_actions = ""
         spell_summary = ""
 
-        log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
+        driver = open_selenium()
+
+        if driver == None and len(spell_output) > 0:
+            return spell_output
+        elif driver == None and len(spell_output) == 0:
+            return None
+
         log(f"Going to Page: {spell_link}")
         driver.get(f"{spell_link}")
         log("Waiting for Page to Load")

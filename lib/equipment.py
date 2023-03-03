@@ -6,11 +6,12 @@ from selenium.webdriver.common.by import By
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position, find_which_exists
+from lib.helper import remove_tags, find_earliest_position, find_which_exists, open_selenium
 from lib.log import log_text as log
 
-url = "https://2e.aonprd.com/Equipment.aspx?All=true"
+url = "https://2e.aonprd.com/Equipment.aspx"
 test_limit = 0
+error_limit = 5
 
 def upload_equipment_data():
     log("Starting Equipment Upload Preperation")
@@ -31,86 +32,166 @@ def upload_equipment_data():
     conn.close()
 
 def grab_equipment_data():
+    global error_limit
+
     equipment_output = []
-
-    log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
-    log("Going to Page: " + url)
-    driver.get(url)
-    #log("Waiting for Page to Load")
-    #time.sleep(5)
-    
-    log("Setting Table to Show All Rows")
-    input_box = driver.find_element(By.ID, "ctl00_RadDrawer1_Content_MainContent_Rad_AllEquipment_ctl00_ctl03_ctl02_ChangePageSizeTextBox")
-    input_box.send_keys("1000000")
-    input_box.send_keys(Keys.ENTER)
-    
-    log("Getting Page Source")
-    html = driver.page_source
-    log("Setting up BeautifulSoup with Source")
-    soup = BeautifulSoup(html, "html.parser")
-    
-    button_list = driver.find_elements(By.TAG_NAME, "button")
-    
-    for button in button_list:
-        if button.text.lower().startswith("load remaining"):
-            button.click()
-            
-    log("Waiting for Page to Load")
-    time.sleep(5)
-
-    log("Finding Table")
-    container = soup.find("table", _class="column gap-medium")
-    
-    log("Getting Table Body")
-    table_body = container.find("tbody")
-    
-    log("Getting Table Rows")
-    table_rows = table_body.find_all("tr")
-    
-    ignore_col = [2, 3, 4, 6, 10]
     link_list = ["Equipment.aspx", "Vehicles.aspx", "Weapons.aspx", "Armor.aspx", "Shields.aspx"]
+
+    driver = open_selenium()
+
+    if driver == None: return
+
+    x = 0
     
-    i = 1
-    get_link = True
-    x = 1
-    
-    log("Looking Through Rows for Data")
-    for row in table_rows:
-        row_data = row.find_all("td")
-        data_output = []
-        for data in row_data:
-            if i in ignore_col:
-                log(f"Ignoring Column {i}")
-                i += 1
-                continue
-            
-            data_text = data.text.replace("\n", "")
-            log(f"Found: {data_text}")
-            data_output.append(data_text)
-            
-            if get_link:
-                links = data.find_all("a")
-                for l in links:
-                    for s in link_list:
-                        if l.get("href").startswith(s):
-                            data_output.append("https://2e.aonprd.com/" + l.get("href"))
-                            get_link = False
-            
-            i += 1
-        
-        log(f"Data Output: {data_output}")    
-        equipment_output.append(data_output)
+    for url in link_list:
         i = 1
-        get_link = True
-        
+        curr_error_num = 0
+
+        while(True):
+            equipment_name = ""
+            equipment_traits = ""
+            equipment_category = ""
+            equipment_level = ""
+            equipment_price = ""
+            equipment_bulk = ""
+
+            full_url = f"https://2e.aonprd.com/{url}?ID={i}"
+
+            log("Opening Browser")
+            driver = open_selenium()
+            log(f"Going to Page: {full_url}")
+            driver.get(f"{full_url}")
+
+            log("Getting Page Source")
+            html = driver.page_source
+            
+            if html.find("Server Error in '/' Application.") > -1:
+                log("Reached An Unknown Equipment ID.")
+                curr_error_num += 1
+                if curr_error_num == error_limit:
+                    log("Ending Search. Moving to Next Equipment Category.")
+                    break
+                else:
+                    log(f"Reached Unknown Feat {curr_error_num} in a Row. Limit is {error_limit}")
+                    i += 1
+                    continue
+
+            if curr_error_num > 0:
+                log("Resetting Error Count")
+                curr_error_num = 0            
+            
+            log("Setting up BeautifulSoup with Source")
+            soup = BeautifulSoup(html, "html.parser")
+
+            log("Finding Equipment Name and Level")
+            container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_DetailedOutput")
+            equipment_name_level = container.find("h1")
+            equipment_name_level_pos = html.find("ctl00_RadDrawer1_Content_MainContent_DetailedOutput")
+            print(equipment_name_level_pos)
+            equipment_name_level_str = equipment_name_level.text
+
+            if equipment_name_level_str.find("Item") > -1:
+                equipment_name = equipment_name_level_str[:equipment_name_level_str.find("Item")]
+                equipment_level = equipment_name_level_str[equipment_name_level_str.find("Item"):].split(" ")[1]
+
+                log(f"Found: {equipment_name}, Level {equipment_level}")
+            elif equipment_name_level_str.find("Vehicle") > -1:
+                equipment_name = equipment_name_level_str[:equipment_name_level_str.find("Vehicle")]
+                equipment_level = equipment_name_level_str[equipment_name_level_str.find("Vehicle"):].split(" ")[1]
+
+                log(f"Found: {equipment_name}, Level {equipment_level}")
+            else:
+                equipment_name = equipment_name_level_str
+                log(f"Found: {equipment_name}")
+
+            trait_spans = container.find_all(By.CLASS_NAME, "trait")
+            trait_str = ""
+
+            if len(trait_spans) > 0:
+                for trait in trait_spans:
+                    trait_str += trait.text
+
+            elif(html.find("<b>Traits</b>") > -1):
+                trait_start_pos = 0
+                trait_start_pos = html.find("<b>Traits</b>") + len("<b>Traits</b>")
+                trait_end_pos = find_earliest_position(html.find("<br>", trait_start_pos), html.find("<hr>", trait_start_pos), html.find(";", trait_start_pos))
+                trait_str = html[trait_start_pos:trait_end_pos]
+
+                trait_str = remove_tags(trait_str, "u")
+                trait_str = remove_tags(trait_str, "a")
+            else:
+                trait_str = "-"
+
+            equipment_traits = trait_str.strip()
+
+            price_start_pos = html.find("<b>Price</b>")
+            price_end_pos = find_earliest_position(html.find(";", price_start_pos), html.find("\n", price_start_pos), html.find("<br>", price_start_pos), html.find("<hr>", price_start_pos))
+
+            equipment_price = html[price_start_pos + len("<b>Price</b>"):price_end_pos].strip()
+
+            bulk_start_pos = html.find("<b>Bulk</b>")
+            bulk_end_pos = find_earliest_position(html.find(";", bulk_start_pos), html.find("\n", bulk_start_pos), html.find("<br>", bulk_start_pos), html.find("<hr>", bulk_start_pos))
+
+            equipment_bulk = html[bulk_start_pos + len("<b>Bulk</b>"):bulk_end_pos].strip()
+
+            equipment_category = url[:url.find(".")]
+
+            equipment_output.append([equipment_name, full_url, equipment_traits, equipment_category, equipment_level, equipment_price, equipment_bulk])
+
+            x += 1
+            i += 1
+            if test_limit > 0 and x == test_limit:
+                break
+
         if test_limit > 0 and x == test_limit:
             break
-        
-        x += 1
             
     log(f"Equipment Output: {equipment_output}")
     return equipment_output
+
+#    log("Finding Table")
+#    container = soup.find("table", _class="column gap-medium")
+#    
+#    log("Getting Table Body")
+#    table_body = container.find("tbody")
+#    
+#    log("Getting Table Rows")
+#    table_rows = table_body.find_all("tr")
+#    
+#    ignore_col = [2, 3, 4, 6, 10]
+#    
+#    i = 1
+#    get_link = True
+#    x = 1
+#    
+#    log("Looking Through Rows for Data")
+#    for row in table_rows:
+#        row_data = row.find_all("td")
+#        data_output = []
+#        for data in row_data:
+#            if i in ignore_col:
+#                log(f"Ignoring Column {i}")
+#                i += 1
+#                continue
+#            
+#            data_text = data.text.replace("\n", "")
+#            log(f"Found: {data_text}")
+#            data_output.append(data_text)
+#            
+#            if get_link:
+#                links = data.find_all("a")
+#                for l in links:
+#                    for s in link_list:
+#                        if l.get("href").startswith(s):
+#                            data_output.append("https://2e.aonprd.com/" + l.get("href"))
+#                            get_link = False
+#            
+#            i += 1
+#        
+#        log(f"Data Output: {data_output}")    
+#        equipment_output.append(data_output)
+#        i = 1
+#        get_link = True
             
 def organize_equipment_data():
     log("Getting Equipment Data")

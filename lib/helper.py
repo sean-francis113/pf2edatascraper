@@ -1,4 +1,5 @@
 from lib.log import log_text as log
+from selenium import webdriver
 
 def remove_tags(text, tag_to_remove="", remove_inside=False):
     tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/", "li", "ul", "ol"]
@@ -75,3 +76,20 @@ def find_which_exists(str, start, *args):
             exist_list.append(a)
 
     return exist_list
+
+def open_selenium():
+    driver = None
+    
+    log("Opening Browser")
+    try:
+        driver = webdriver.Chrome("./chromedriver.exe")
+        if driver != None:
+            log("OS is Windows")
+    except:
+        driver = webdriver.Chrome("./chromedriver")
+        if driver != None:
+            log("OS is Linux")
+    finally:
+        log("Could Not Open Browser")
+    
+    return driver

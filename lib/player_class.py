@@ -4,7 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 import lib.db
-import lib.helper
+from lib.helper import open_selenium
 from lib.log import log_text as log
 
 url = "https://2e.aonprd.com/Classes.aspx"
@@ -31,7 +31,7 @@ def grab_class_data():
     class_output = []
 
     log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + url)
     driver.get(url)
     log("Waiting for Page to Load")
@@ -61,7 +61,7 @@ def grab_class_data():
                 log("Found " + class_name + " With the Following Link: " + class_link)
 
                 log("Opening Class Page")
-                class_driver = webdriver.Chrome("./chromedriver.exe")
+                class_driver = open_selenium()
                 class_driver.get(class_link)
                 log("Waiting for Page to Load")
                 time.sleep(5)

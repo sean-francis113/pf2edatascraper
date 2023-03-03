@@ -1,1 +1,5 @@
 user_data/
+logs/
+venv/
+output/
+.vscode/

@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 import time
 
 import lib.db
-from lib.helper import remove_tags, find_earliest_position
+from lib.helper import remove_tags, find_earliest_position, open_selenium
 from lib.log import log_text as log
 
 url = "https://2e.aonprd.com/Classes.aspx"
@@ -31,8 +31,7 @@ def upload_features_data():
 def grab_feature_data():
     feature_output = []
 
-    log("Opening Browser")
-    driver = webdriver.Chrome('./chromedriver.exe')
+    driver = open_selenium()
     log("Going to Page: " + url)
     driver.get(url)
     log("Waiting for Page to Load")
@@ -61,7 +60,7 @@ def grab_feature_data():
                 log("Found " + class_name + " With the Following Link: " + class_link)
 
                 log("Opening Class Page")
-                class_driver = webdriver.Chrome("./chromedriver.exe")
+                class_driver = open_selenium()
                 class_driver.get(class_link)
                 log("Waiting for Page to Load")
                 time.sleep(5)

@@ -8,7 +8,7 @@ from os.path import exists
 from datetime import date
 
 import lib.db
-import lib.helper
+from lib.helper import open_selenium
 from lib.log import log_text as log
 
 update_file_path = "./update.txt"
@@ -46,7 +46,7 @@ def check_for_update():
         url = "https://2e.aonprd.com"
         
         log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
+        driver = open_selenium()
         log("Going to Page: " + url)
         driver.get(url)
 
@@ -78,7 +78,7 @@ def set_update_time():
         url = "https://2e.aonprd.com"
         
         log("Opening Browser")
-        driver = webdriver.Chrome('./chromedriver.exe')
+        driver = open_selenium()
         log("Going to Page: " + url)
         driver.get(url)
 

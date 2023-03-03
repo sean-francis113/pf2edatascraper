@@ -26,11 +26,13 @@ try:
         #lib.class_features.upload_features_data()
         #lib.companions.upload_companion_data()
         #lib.eidolon.upload_eidolon_data()
-        lib.equipment.upload_equipment_data()
-        #lib.feats.upload_feat_data()
+        #lib.equipment.upload_equipment_data()
+        lib.feats.upload_feat_data()
         #lib.heritages.upload_heritage_data()
         #lib.player_class.upload_class_data()
         #lib.spells.upload_spell_data()
+
+        lib.update.set_update_time()
 
     lib.log.close_log_file()
 
