@@ -46,6 +46,8 @@ def grab_eidolon_data():
     form_output = []
 
     log("Starting to Grab Eidolon Data")
+    log("Opening Browser")
+    driver = open_selenium()
 
     i = 1
 
@@ -65,12 +67,8 @@ def grab_eidolon_data():
         eidolon_symbiosis_ability = []
         eidolon_transcendence_ability = []        
 
-        log("Opening Browser")
-        driver = open_selenium()
         log(f"Going to Page: {eidolon_link}")
         driver.get(f"{eidolon_link}")
-        #log("Waiting for Page to Load")
-        #time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source

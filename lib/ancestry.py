@@ -62,13 +62,10 @@ def grab_ancestry_data():
         break
 
     log("Opening Ancestry Page")
-    ancestry_driver = open_selenium()
-    ancestry_driver.get(output_link)
-    log("Waiting for Page to Load")
-    time.sleep(5)
+    driver.get(output_link)
 
     log("Getting Ancestry Page Source")
-    ancestry_html = ancestry_driver.page_source
+    ancestry_html = driver.page_source
 
     log("Getting HP")
     hp_output = find_ancestry_stat(ancestry_html, "Hit Points</h2>", True, False)
@@ -128,9 +125,8 @@ def grab_ancestry_data():
     log("Found: " + languages_log_str + "\nAdding Output To List")
     ancestry_output.append([elements[0], output_link, hp_output, size_output, speed_output, ability_boost_output, ability_flaw_output, languages_output, specials_output])
 
-    log("Closing Ancestry Page\n")
-    ancestry_driver.close()
 
+  log("Closing Ancestry Page\n")
   driver.close()
   return ancestry_output
 

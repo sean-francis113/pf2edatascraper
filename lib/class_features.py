@@ -32,10 +32,9 @@ def grab_feature_data():
     feature_output = []
 
     driver = open_selenium()
+    class_driver = open_selenium()
     log("Going to Page: " + url)
     driver.get(url)
-    log("Waiting for Page to Load")
-    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -60,10 +59,7 @@ def grab_feature_data():
                 log("Found " + class_name + " With the Following Link: " + class_link)
 
                 log("Opening Class Page")
-                class_driver = open_selenium()
                 class_driver.get(class_link)
-                log("Waiting for Page to Load")
-                time.sleep(5)
 
                 log("Getting Class Page Source")
                 class_html = class_driver.page_source

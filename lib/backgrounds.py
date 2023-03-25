@@ -37,6 +37,7 @@ def grab_background_data():
     background_output = []
 
     log("Starting to Grab Backgrounds")
+    driver = open_selenium()
 
     i = 0
 
@@ -45,11 +46,8 @@ def grab_background_data():
         background_link = f"{url}{i}"
         background_summary = ""
 
-        driver = open_selenium()
         log(f"Going to Page: {url}{i}")
         driver.get(f"{url}{i}")
-        log("Waiting for Page to Load")
-        time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source

@@ -53,8 +53,6 @@ def grab_spell_table_data():
     driver = open_selenium()
     log("Going to Page: " + spell_table_url)
     driver.get(spell_table_url)
-    log("Waiting for Page to Load")
-    time.sleep(5)
 
     log("Getting Page Source")
     html = driver.page_source
@@ -86,8 +84,6 @@ def grab_spell_table_data():
                     return None
 
                 class_driver.get(class_link)
-                log("Waiting for Page to Load")
-                time.sleep(5)
 
                 log("Getting Class Page Source")
                 class_html = class_driver.page_source
@@ -158,6 +154,7 @@ def grab_spell_data():
     spell_output = []
 
     log("Starting to Grab Spells")
+    driver = open_selenium()
 
     i = 1
 
@@ -170,8 +167,6 @@ def grab_spell_data():
         spell_actions = ""
         spell_summary = ""
 
-        driver = open_selenium()
-
         if driver == None and len(spell_output) > 0:
             return spell_output
         elif driver == None and len(spell_output) == 0:
@@ -179,8 +174,6 @@ def grab_spell_data():
 
         log(f"Going to Page: {spell_link}")
         driver.get(f"{spell_link}")
-        log("Waiting for Page to Load")
-        time.sleep(5)
 
         log("Getting Page Source")
         html = driver.page_source
@@ -210,12 +203,16 @@ def grab_spell_data():
         print(spell_name_level_pos)
         spell_name_level_str = spell_name_level.text
 
-        if spell_name_level_str.find("Spell") > -1:
-            spell_name = spell_name_level_str[:spell_name_level_str.find("Spell")]
-            spell_level = spell_name_level_str[spell_name_level_str.find("Spell"):].split(" ")[1]
-        elif spell_name_level_str.find("Cantrip") > -1:
-            spell_name = spell_name_level_str[:spell_name_level_str.find("Cantrip")]
-            spell_level = "Cantrip"
+        split_spell_name_level_str = spell_name_level_str.split(" ")
+        spell_level = split_spell_name_level_str[-1]
+        spell_name = " ".join(split_spell_name_level_str[:-2])
+
+        #if spell_name_level_str.find("Spell") > -1 or spell_name_level.find("Focus") > -1:
+            #spell_name = spell_name_level_str[:spell_name_level_str.find("Spell")]
+            #spell_level = spell_name_level_str[spell_name_level_str.find("Spell"):].split(" ")[1]
+        #elif spell_name_level_str.find("Cantrip") > -1:
+            #spell_name = spell_name_level_str[:spell_name_level_str.find("Cantrip")]
+            #spell_level = "Cantrip"
 
         log(f"Found: {spell_name}, Level {spell_level}")
         log("Finding Spell Tradition(s)")
