@@ -2,7 +2,7 @@ from lib.log import log_text as log
 from selenium import webdriver
 
 def remove_tags(text, tag_to_remove="", remove_inside=False):
-    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/", "li", "ul", "ol"]
+    tag_list = ["a", "h1", "h2", "h3", "span", "b", "i", "u", "hr", "hr/", "br", "br/", "li", "ul", "ol", "sup"]
     
     if type(text) != str:
         text = str(text)

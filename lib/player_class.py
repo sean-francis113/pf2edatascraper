@@ -63,8 +63,6 @@ def grab_class_data():
                 log("Opening Class Page")
                 class_driver = open_selenium()
                 class_driver.get(class_link)
-                log("Waiting for Page to Load")
-                time.sleep(5)
 
                 log("Getting Class Page Source")
                 class_html = class_driver.page_source
@@ -123,8 +121,8 @@ def grab_class_data():
                         continue
 
                     log("Grabbing Stats From Line: \"" + p + "\"")
-                    p = lib.helper.remove_tags(p, remove_inside=True)
                     p = lib.helper.remove_tags(p, tag_to_remove="a")
+                    p = lib.helper.remove_tags(p, remove_inside=True)
                     p = p.strip()
                     log("Tagless Line: \"" + p + "\"")
 

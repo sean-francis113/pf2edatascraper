@@ -21,11 +21,11 @@ try:
     log_file = lib.log.open_log_file()
 
     if(lib.update.check_for_update()):
-        #lib.ancestry.upload_ancestry_data()
-        #lib.backgrounds.upload_background_data()
-        #lib.class_features.upload_features_data()
-        #lib.companions.upload_companion_data()
-        #lib.eidolon.upload_eidolon_data()
+        lib.ancestry.upload_ancestry_data()
+        lib.backgrounds.upload_background_data()
+        lib.class_features.upload_features_data()
+        lib.companions.upload_companion_data()
+        lib.eidolon.upload_eidolon_data()
         lib.equipment.upload_equipment_data()
         lib.feats.upload_feat_data()
         lib.heritages.upload_heritage_data()

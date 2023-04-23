@@ -36,6 +36,8 @@ def log_text(text, close_file=True):
 
     if text[-1] != ".":
         text += "."
+        
+    text = text.replace("‑", "-")
 
     text = "[" + datetime.datetime.now().strftime("%H:%M:%S") + "]: " + text
 

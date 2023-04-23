@@ -101,9 +101,9 @@ def grab_eidolon_data():
         log(f"Found: {eidolon_name}")
         
         log("Getting Eidolon Traits")
-        spans = container.find_all("span", class_="trait")
+        spans = container.find_all("span", {"class": "trait"})
         for span in spans:
-            eidolon_traits.append(span["alt"].split(" ")[:-1])
+            eidolon_traits.append(span.text)
         log(f"Found: {str(eidolon_traits)}")
                 
         log("Getting Eidolon Description")        

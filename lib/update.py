@@ -13,7 +13,6 @@ from lib.log import log_text as log
 
 update_file_path = "./update.txt"
 update_file = None
-latest_update_time = ""
 
 def open_update_file(file_mode = "a"):
     global update_file
@@ -58,20 +57,20 @@ def check_for_update():
         log("Finding Initial HTML Container")
         container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_MainNewsFeed")
         log("Finding All Categories in Container")
-        name_list = container.find_all("h1")
+        name = container.find("h1")
         
-        if name_list[0] != text_lines[0]:
+        if name.text.strip() != text_lines[0].strip():
             update_file.close()
             return True
         else:
             update_file.close()
             return False
     
-def set_update_time():
+def set_update_time(update_time = ""):
     update_file = open_update_file("w")
     
-    if latest_update_time != "":
-        update_file.write(latest_update_time)
+    if update_time != "":
+        update_file.write(update_time)
         update_file.close()
         return
     else:
@@ -89,10 +88,10 @@ def set_update_time():
 
         log("Finding Initial HTML Container")
         container = soup.find(id="ctl00_RadDrawer1_Content_MainContent_MainNewsFeed")
-        log("Finding All Categories in Container")
-        name_list = container.find_all("h1")
+        log("Finding Latest Time in Container")
+        name = container.find("h1")
         
-        update_file.write(name_list[0])
+        update_file.write(name.text)
         update_file.close()
         return
 

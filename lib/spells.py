@@ -51,6 +51,8 @@ def grab_spell_table_data():
     spell_table_output = []
 
     driver = open_selenium()
+    log("Opening Class Page")
+    class_driver = open_selenium()
     log("Going to Page: " + spell_table_url)
     driver.get(spell_table_url)
 
@@ -74,9 +76,6 @@ def grab_spell_table_data():
                 class_name = link.text
                 class_link = "https://2e.aonprd.com/" + link.get("href")
                 log("Found " + class_name + " With the Following Link: " + class_link)
-
-                log("Opening Class Page")
-                class_driver = open_selenium()
 
                 if class_driver == None and len(spell_table_output) > 0:
                     return spell_table_output
@@ -205,7 +204,15 @@ def grab_spell_data():
 
         split_spell_name_level_str = spell_name_level_str.split(" ")
         spell_level = split_spell_name_level_str[-1]
-        spell_name = " ".join(split_spell_name_level_str[:-2])
+        
+        if(split_spell_name_level_str[-2][-5:] == "Spell" or split_spell_name_level_str[-2][-5:] == "Focus"):
+            split_spell_name_level_str[-2] = split_spell_name_level_str[-2][:-5]
+        elif(split_spell_name_level_str[-2][-7:] == "Cantrip"):
+            split_spell_name_level_str[-2] = split_spell_name_level_str[-2][:-7]
+            spell_level = "Cantrip"
+            
+        
+        spell_name = " ".join(split_spell_name_level_str[:-1])
 
         #if spell_name_level_str.find("Spell") > -1 or spell_name_level.find("Focus") > -1:
             #spell_name = spell_name_level_str[:spell_name_level_str.find("Spell")]
@@ -277,10 +284,7 @@ def grab_spell_data():
         log(f"Found: {spell_summary}")
         spell_summary = remove_tags(spell_summary, tag_to_remove="h2", remove_inside=True)
         spell_summary = remove_tags(spell_summary, tag_to_remove="table", remove_inside=True)
-        spell_summary = remove_tags(spell_summary, tag_to_remove="i")
-        spell_summary = remove_tags(spell_summary, tag_to_remove="u")
-        spell_summary = remove_tags(spell_summary, tag_to_remove="b")
-        spell_summary = remove_tags(spell_summary, tag_to_remove="a")
+        spell_summary = remove_tags(spell_summary)
 
         spell_output.append([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary])
         log([spell_name, spell_link, spell_level, spell_tradition_str, spell_actions, spell_summary])
